@@ -1,23 +1,32 @@
 import { useState, useEffect } from "react";
 import { Form } from "reactstrap";
+import PropTypes from "prop-types"
 import Button from "reactstrap";
-import { getServiceTickets, createServiceTicket } from "../../data/serviceTicketsData";
+import { createServiceTicket } from "../../data/serviceTicketsData";
+import getCustomers from "../../data/customersData";
+import getEmployees from "../../data/employeeData"
 
 const initialState = {
-  id: '',
   customerId: '',
   employeeId: '',
   description: '',
   emergency: false,
-  dateCompleted: null,
 };
 
 export default function CreateTicket({ obj }) {
   const [formInput, setFormInput] = useState(initialState);
-  const [createTicket, setCreateTicket] = useState([]);
+  const [ticketData, setTicketData] = useState([]);
+  const [employees, setEmployees] = useState([]);
+  const [customers, setCustomers] = useState([]);
 
   useEffect(() => {
-    createServiceTicket().then(setCreateTicket);
+    createServiceTicket(formInput).then(setTicketData);
+  }, []);
+
+  useEffect(() => {
+    // Fetch employees and customers data from the backend here
+    getEmployees().then((data) => setEmployees(data));
+    getCustomers().then(setCustomers);
   }, []);
 
   const handleChange = (e) => {
@@ -30,8 +39,13 @@ export default function CreateTicket({ obj }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-      const payload = { ...formInput };
-      createTicket(payload).then();
+      const payload = { ...formInput }
+      createServiceTicket(payload).then((response) => {
+        console.warn("Service ticket created successfully!", response)
+      })
+      .catch((error) => {
+        console.error("Error creating service ticket:", error);
+      });
     }
 
 
@@ -40,56 +54,49 @@ export default function CreateTicket({ obj }) {
     <h2 className="text-white mt-5">Create Service Ticket</h2>
 
     <div className="mb-3">
-      <label htmlFor="title" className="form-label">
-        Service Ticket Id
-      </label>
-      <input
-        type="text"
-        className="form-control"
-        id="title"
-        placeholder="Enter a title"
-        name="title"
-        value={formInput.id}
-        onChange={handleChange}
-        required
-      />
-    </div>
+    <label htmlFor="employeeId" className="form-label">
+      Employees
+    </label>
+    <select
+      className="form-select"
+      id="employeeId"
+      aria-label="Employee"
+      name="employeeId"
+      onChange={handleChange}
+      value={formInput.employeeId}
+      required
+    >
+      <option value="">Select an Employee</option>
+      {employees.map((employee) => (
+        <option key={employee.id} value={employee.id}>
+          {employee.name}
+        </option>
+      ))}
+    </select>
+  </div>
 
-    <div className="mb-3">
-      <label htmlFor="customerId" className="form-label">
-        Customer Id
-      </label>
-      <input
-        type="text"
-        className="form-control"
-        id="customerId"
-        placeholder="Enter Customer Id"
-        name="customerId"
-        value={formInput.customerId}
-        onChange={handleChange}
-        required
-      />
-    </div>
+  <div className="mb-3">
+    <label htmlFor="employee_id" className="form-label">
+      Customer
+    </label>
+    <select
+      className="form-select"
+      id="customerId"
+      aria-label="Customer"
+      name="customerId"
+      onChange={handleChange}
+      value={formInput.customerId}
+      required
+    >
+      <option value="">Select a Customer</option>
+      {customers.map((customer) => (
+        <option key={customer.id} value={customer.id}>
+          {customer.name}
+        </option>
+      ))}
+    </select>
+  </div>
   
-    {/* PRICE INPUT  */}
-    <div className="mb-3">
-      <label htmlFor="price" className="form-label">
-        Book Price
-      </label>
-      <input
-        type="text"
-        className="form-control"
-        id="price"
-        placeholder="Enter price"
-        name="price"
-        value={formInput.price}
-        onChange={handleChange}
-        required
-      />
-    </div>
-  
-   
-    {/* DESCRIPTION TEXTAREA  */}
     <div className="mb-3">
       <label htmlFor="description" className="form-label">
         Description
@@ -108,17 +115,17 @@ export default function CreateTicket({ obj }) {
   
     {/* A WAY TO HANDLE UPDATES FOR TOGGLES, RADIOS, ETC  */}
     <div className="mb-3">
-      <label className="form-check-label">On Sale?</label>
+      <label className="form-check-label">Emergency?</label>
       <input
         className="form-check-input"
         type="checkbox"
-        id="sale"
-        name="sale"
-        checked={formInput.sale}
+        id="emergency"
+        name="emergency"
+        checked={formInput.emergency}
         onChange={(e) => {
           setFormInput((prevState) => ({
             ...prevState,
-            sale: e.target.checked,
+            emergency: e.target.checked,
           }));
         }}
       />
@@ -132,18 +139,17 @@ export default function CreateTicket({ obj }) {
   );
 }
 
-// BookForm.propTypes = {
-//   obj: PropTypes.shape({
-//     description: PropTypes.string,
-//     image: PropTypes.string,
-//     price: PropTypes.string,
-//     sale: PropTypes.bool,
-//     title: PropTypes.string,
-//     author_id: PropTypes.string,
-//     firebaseKey: PropTypes.string,
-//   }),
-// };
+CreateTicket.propTypes = {
+  obj: PropTypes.shape({
+    id: PropTypes.string,
+    customerId: PropTypes.string,
+    employeeId: PropTypes.string,
+    description: PropTypes.string,
+    emergency: PropTypes.bool,
+    dateCompleted: PropTypes.string,
+  }),
+};
 
-// BookForm.defaultProps = {
-//   obj: initialState,
-// };
+CreateTicket.defaultProps = {
+  obj: initialState,
+};
